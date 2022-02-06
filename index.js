@@ -1,61 +1,87 @@
-const colors = require("colors/safe");
+// task #1
+// console.log("Record 1");                 //1
 
-const firstNum = parseInt(process.argv[2]);
-const secondNum = parseInt(process.argv[3]);
-let primeNumbers = [];
+// setTimeout(() => {
+//   console.log("Record 2");               //4
+//   Promise.resolve().then(() => {
+//     setTimeout(() => {
+//       сonsole.log("Record 3");           //5
+//       Promise.resolve().then(() => {
+//         console.log("Record 4");         //6
+//       });
+//     });
+//   });
+// });
 
-const errorCheckker = function () {
-  if (!Number.isInteger(firstNum) || !Number.isInteger(secondNum)) {
-    console.log(colors.red("введите в качестве параметров числа"));
-    process.exit();
+// console.log("Record 5");                  //2
+
+// Promise.resolve().then(() =>
+//   Promise.resolve().then(() => console.log("Record 6"))  //3
+// );
+
+// task2
+// не знаю правильно ли я понял задание, но этот код делает обратный отсчет
+// введите значение в формате hh-mm-ss!!!
+
+import EventEmitter from "events";
+
+import Handler from "./modules/Handler.js";
+
+const emitter = new EventEmitter();
+
+let startDate = process.argv[2].replace(/-/g, ",").split(",");
+
+emitter.on("start", Handler.start);
+emitter.on("finish", Handler.finish);
+emitter.on("error", Handler.error);
+
+class UserDateCounter {
+  constructor(dateArr) {
+    this.hour = +dateArr[0];
+    this.min = +dateArr[1];
+    this.sec = +dateArr[2];
+    this._init();
   }
-  if (!primeNumbers.length) {
-    console.log(colors.red("простых чисел не обнаруженно"));
+  _init() {
+    if (!Number.isInteger(this.min + this.sec + this.hour)) {
+      emitter.emit("error", "not a numbers");
+      process.exit();
+    }
+    if (this.min > 60 || this.min < 0 || this.sec > 60 || this.sec < 0) {
+      emitter.emit("error", "wrong time value");
+      process.exit();
+    }
+    emitter.emit("start");
+    this._timeLogger();
   }
-};
-
-const numberChecker = function (num) {
-  if (num > 1) {
-    for (let i = 2; i < num; i++) {
-      if (num % i == 0) {
-        return false;
+  _counterTick() {
+    this.sec--;
+    if (this.sec < 0) {
+      this.sec = 60;
+      this.min--;
+      if (this.min < 0) {
+        this.min = 60;
+        this.hour--;
+        if (this.hour < 0) {
+          emitter.emit("finish");
+          process.exit();
+        }
       }
     }
-    return true;
   }
-};
-
-const primeNumbersArrayMaker = function (arrayWithNumbers) {
-  for (let i = firstNum; i <= secondNum; i++) {
-    if (numberChecker(i)) {
-      arrayWithNumbers.push(i);
-    }
+  _timeLogger() {
+    console.log(
+      `осталось ${this.hour} часов, ${this.min} минут, ${this.sec} секунд`
+    );
   }
-};
-
-const numbersLogger = function (arrayToLog) {
-  let counter = 0;
-
-  for (let i = 0; i < arrayToLog.length; i++) {
-    switch (counter) {
-      case 0:
-        console.log(colors.green(arrayToLog[i]));
-        counter++;
-        break;
-      case 1:
-        console.log(colors.yellow(arrayToLog[i]));
-        counter++;
-        break;
-      case 2:
-        console.log(colors.red(arrayToLog[i]));
-        counter = 0;
-        break;
-    }
+  start() {
+    setInterval(() => {
+      this._counterTick();
+      this._timeLogger();
+    }, 1000);
   }
-};
+}
 
-primeNumbersArrayMaker(primeNumbers);
+let counter = new UserDateCounter(startDate);
 
-errorCheckker();
-
-numbersLogger(primeNumbers);
+counter.start();
