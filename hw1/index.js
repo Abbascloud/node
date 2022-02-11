@@ -29,7 +29,7 @@ import Handler from "./modules/Handler.js";
 
 const emitter = new EventEmitter();
 
-let startDate = process.argv[2].replace(/-/g, ",").split(",");
+const startDate = process.argv[2].replace(/-/g, ",").split(",");
 
 emitter.on("start", Handler.start);
 emitter.on("finish", Handler.finish);
